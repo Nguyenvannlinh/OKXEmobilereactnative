@@ -20,7 +20,10 @@ interface Model {
 }
 
 export default function ModelPage() {
-  const API_URL = 'http://localhost:5000/api/models';
+ const API_URL =
+    Platform.OS === 'web'
+      ? 'http://localhost:5000/api/models'
+      : 'http://172.20.10.7:5000/api/models';
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);

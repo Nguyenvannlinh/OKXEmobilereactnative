@@ -13,7 +13,11 @@ import {
 } from "react-native";
 
 export default function MessagePage() {
-  const API_URL = "http://localhost:5000/api/messages";
+  // ✅ Dùng IP LAN cho mobile
+  const API_URL =
+    Platform.OS === "web"
+      ? "http://localhost:5000/api/messages"
+      : "http://172.20.10.7:5000/api/messages";
 
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +27,7 @@ export default function MessagePage() {
   const [form, setForm] = useState({
     sender_id: "",
     receiver_id: "",
-    listing_id: "", // ✅ thêm listing_id
+    listing_id: "",
     content: "",
     is_read: false,
   });
@@ -43,7 +47,7 @@ export default function MessagePage() {
 
       setMessages(sorted);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Lỗi tải tin nhắn:", err);
       Alert.alert("Lỗi", "Không thể tải danh sách tin nhắn");
     } finally {
       setLoading(false);
@@ -59,11 +63,11 @@ export default function MessagePage() {
     if (item) {
       setEditingItem(item);
       setForm({
-        sender_id: item.sender_id.toString(),
-        receiver_id: item.receiver_id.toString(),
-        listing_id: item.listing_id ? item.listing_id.toString() : "",
-        content: item.content,
-        is_read: item.is_read,
+        sender_id: item.sender_id?.toString() || "",
+        receiver_id: item.receiver_id?.toString() || "",
+        listing_id: item.listing_id?.toString() || "",
+        content: item.content || "",
+        is_read: item.is_read || false,
       });
     } else {
       setEditingItem(null);
@@ -80,6 +84,11 @@ export default function MessagePage() {
 
   // 🔹 Lưu tin nhắn
   const handleSave = async () => {
+    if (!form.sender_id || !form.receiver_id || !form.content.trim()) {
+      Alert.alert("Cảnh báo", "Vui lòng nhập đầy đủ thông tin bắt buộc!");
+      return;
+    }
+
     const method = editingItem ? "PUT" : "POST";
     const url = editingItem ? `${API_URL}/${editingItem.message_id}` : API_URL;
 
@@ -97,12 +106,16 @@ export default function MessagePage() {
       });
 
       if (!res.ok) throw new Error("Không thể lưu dữ liệu");
-      Alert.alert("✅ Thành công", editingItem ? "Đã cập nhật tin nhắn" : "Đã thêm tin nhắn");
+
+      Alert.alert(
+        "✅ Thành công",
+        editingItem ? "Đã cập nhật tin nhắn" : "Đã thêm tin nhắn"
+      );
 
       setModalVisible(false);
       fetchMessages();
     } catch (err) {
-      console.error(err);
+      console.error("❌ Save error:", err);
       Alert.alert("Lỗi", "Không thể lưu tin nhắn");
     }
   };
@@ -112,17 +125,19 @@ export default function MessagePage() {
     const confirmDelete = async () => {
       try {
         const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error(`Xóa thất bại: ${res.status}`);
+        if (!res.ok) throw new Error();
+
         Alert.alert("✅ Thành công", "Đã xóa tin nhắn");
         fetchMessages();
       } catch (err) {
-        console.error(err);
+        console.error("❌ Delete error:", err);
         Alert.alert("Lỗi", "Không thể xóa tin nhắn");
       }
     };
 
     if (Platform.OS === "web") {
-      if (window.confirm("Bạn có chắc muốn xóa tin nhắn này không?")) confirmDelete();
+      if (window.confirm("Bạn có chắc muốn xóa tin nhắn này không?"))
+        confirmDelete();
     } else {
       Alert.alert("Xác nhận", "Bạn có chắc muốn xóa tin nhắn này?", [
         { text: "Hủy", style: "cancel" },
@@ -133,24 +148,34 @@ export default function MessagePage() {
 
   return (
     <View style={styles.container}>
-      {/* 🔹 Header */}
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>💬 Quản lý Tin nhắn</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <TouchableOpacity style={styles.sortBtn} onPress={() => setSortNewest(!sortNewest)}>
+          <TouchableOpacity
+            style={styles.sortBtn}
+            onPress={() => setSortNewest(!sortNewest)}
+          >
             <Text style={styles.sortText}>
               {sortNewest ? "🔽 Mới nhất trước" : "🔼 Cũ nhất trước"}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.addBtn} onPress={() => openModal()}>
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => openModal()}
+          >
             <Text style={styles.addBtnText}>+ Thêm tin nhắn</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* 🔹 Danh sách tin nhắn kiểu hội thoại */}
+      {/* Danh sách tin nhắn */}
       {loading ? (
-        <ActivityIndicator size="large" color="#00C6CF" style={{ marginTop: 20 }} />
+        <ActivityIndicator
+          size="large"
+          color="#00C6CF"
+          style={{ marginTop: 20 }}
+        />
       ) : (
         <ScrollView style={styles.chatContainer}>
           {messages.map((m) => {
@@ -164,14 +189,18 @@ export default function MessagePage() {
                 ]}
               >
                 <Text style={styles.senderName}>
-                  {isSender ? `👤 ${m.sender_name || "Người gửi"}` : `📩 ${m.receiver_name || "Người nhận"}`}
+                  {isSender
+                    ? `👤 Người gửi #${m.sender_id}`
+                    : `📩 Người nhận #${m.receiver_id}`}
                 </Text>
                 <Text style={styles.messageText}>{m.content}</Text>
                 {m.listing_title && (
-                  <Text style={styles.listingText}>🧾 {m.listing_title}</Text>
+                  <Text style={styles.listingText}>
+                    🧾 {m.listing_title}
+                  </Text>
                 )}
                 <Text style={styles.timeText}>
-                  {new Date(m.sent_at || m.created_at).toLocaleString()}
+                  {new Date(m.sent_at || m.created_at).toLocaleString("vi-VN")}
                 </Text>
                 <View style={styles.bubbleActions}>
                   <TouchableOpacity onPress={() => openModal(m)}>
@@ -187,11 +216,13 @@ export default function MessagePage() {
         </ScrollView>
       )}
 
-      {/* 🔹 Modal thêm/sửa */}
+      {/* Modal thêm/sửa */}
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{editingItem ? "Sửa tin nhắn" : "Thêm tin nhắn"}</Text>
+            <Text style={styles.modalTitle}>
+              {editingItem ? "✏️ Sửa tin nhắn" : "➕ Thêm tin nhắn"}
+            </Text>
 
             <TextInput
               style={styles.input}
@@ -246,6 +277,7 @@ export default function MessagePage() {
   );
 }
 
+/* --- Styles --- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5", padding: 10 },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
@@ -268,16 +300,17 @@ const styles = StyleSheet.create({
   },
   bubbleLeft: {
     alignSelf: "flex-start",
-    backgroundColor: "#d9faff", 
-    marginLeft: 5,              
+    backgroundColor: "#d9faff",
+    marginLeft: 5,
   },
   bubbleRight: {
     alignSelf: "flex-end",
-    backgroundColor: "#b9f6ca", 
-    marginRight: 5,   
+    backgroundColor: "#b9f6ca",
+    marginRight: 5,
   },
   senderName: { fontSize: 13, color: "#444", marginBottom: 4 },
   messageText: { fontSize: 16, color: "#222", lineHeight: 22 },
+  listingText: { fontSize: 13, color: "#555", marginTop: 4 },
   timeText: { fontSize: 12, color: "#777", marginTop: 6, alignSelf: "flex-end" },
   bubbleActions: {
     flexDirection: "row",
@@ -294,14 +327,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
   modalContent: {
     backgroundColor: "#fff",
-    width: "90%",
-    borderRadius: 8,
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: 10,
     padding: 16,
   },
-  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
+  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 12, textAlign: "center" },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",

@@ -9,7 +9,7 @@ interface ProductCardProps {
   location: string;
   images?: { image_url: string }[];
   main_image?: string;
-  status?: string; // ✅ thêm để hiển thị "Đã bán"
+  status?: string; 
   onPress?: () => void;
 }
 
@@ -28,7 +28,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const BASE_URL =
     Platform.OS === 'web'
       ? 'http://localhost:5000'
-      : 'http://192.168.1.12:5000';
+      : 'http://172.20.10.7:5000';
 
   const imagePath = images?.[0]?.image_url || main_image || '';
   const getFullImageUrl = (path: string) => {

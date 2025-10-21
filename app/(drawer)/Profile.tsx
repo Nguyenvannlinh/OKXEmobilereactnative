@@ -1,6 +1,6 @@
 import { Entypo, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // dùng cho mobile
-import { useNavigation } from '@react-navigation/native'; // ✅ thêm navigation hook
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -8,13 +8,16 @@ import { JSX } from 'react/jsx-runtime';
 
 const ProfilePage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
-  const navigation = useNavigation(); // ✅ khởi tạo navigation
+  const navigation = useNavigation();
 
-  // ✅ Hàm lấy userID từ localStorage (web) hoặc AsyncStorage (mobile)
+  const BASE_URL =
+    Platform.OS === 'web'
+      ? 'http://localhost:5000'
+      : 'http://172.20.10.7:5000';
+
   const getUserId = async () => {
     try {
-      let userId = null;
-
+      let userId: string | null = null;
       if (Platform.OS === 'web') {
         userId = localStorage.getItem('userId');
       } else {
@@ -22,20 +25,19 @@ const ProfilePage: React.FC = () => {
       }
 
       if (userId) {
-        fetchUserData(userId);
+        setTimeout(() => fetchUserData(userId!), 200);
       }
     } catch (error) {
-      console.log('Lỗi khi lấy userId:', error);
+      console.log('❌ Lỗi khi lấy userId:', error);
     }
   };
 
-  // ✅ Hàm lấy thông tin người dùng từ server
   const fetchUserData = async (id: string) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/users/${id}`);
+      const res = await axios.get(`${BASE_URL}/api/users/${id}`);
       setUser(res.data);
     } catch (error) {
-      console.log('Lỗi khi lấy thông tin người dùng:', error);
+      console.log('❌ Lỗi khi lấy thông tin người dùng:', error);
     }
   };
 
@@ -47,7 +49,7 @@ const ProfilePage: React.FC = () => {
     <Text style={styles.sectionTitle}>{title}</Text>
   );
 
-  // ✅ Cập nhật renderMenuItem cho phép truyền sự kiện onPress
+  // ✅ Component item menu
   const renderMenuItem = (
     icon: JSX.Element,
     label: string,
@@ -69,7 +71,7 @@ const ProfilePage: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* 🔹 Header */}
       <View style={styles.header}>
         <View style={styles.profileInfo}>
           <View style={styles.avatarCircle}>
@@ -100,13 +102,14 @@ const ProfilePage: React.FC = () => {
         </View>
       </View>
 
+      {/* 🔹 Danh mục */}
       <ScrollView style={styles.scroll}>
         {renderSectionTitle('QUẢN LÝ MUA BÁN XE')}
         {renderMenuItem(
           <Entypo name="shop" size={20} color="#00B0FF" />,
           'Gian hàng của tôi',
           undefined,
-          () => navigation.navigate('Mystore' as never) 
+          () => navigation.navigate('Mystore' as never)
         )}
         {renderMenuItem(
           <MaterialIcons name="shopping-cart" size={20} color="#00B0FF" />,
@@ -135,6 +138,7 @@ const ProfilePage: React.FC = () => {
   );
 };
 
+/* --- Styles --- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {

@@ -112,13 +112,9 @@ export const createListing = async (req, res) => {
       status,
     } = req.body;
 
-    // ✅ ÉP KIỂU AN TOÀN
-    const safeFuelType = fuel_type_id ? Number(fuel_type_id) : null;
-    const safeManufacturer = manufacturer_id ? Number(manufacturer_id) : null;
-    const safeModel = model_id ? Number(model_id) : null;
-    const safeBody = body_type_id ? Number(body_type_id) : null;
-    const safeTrans = transmission_id ? Number(transmission_id) : null;
-    const safeSeats = number_of_seats ? Number(number_of_seats) : null;
+    if (!user_id) {
+      return res.status(400).json({ message: "Thiếu user_id người bán" });
+    }
 
     const result = await executeMysqlQuery(
       `INSERT INTO listings (
@@ -127,21 +123,21 @@ export const createListing = async (req, res) => {
         year_of_manufacture, year_of_registration, province_city, color, number_of_seats, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        Number(user_id) || 1, // giả định có user_id
+        Number(user_id),
         title,
         description,
         Number(price) || 0,
         Number(odometer) || 0,
-        safeManufacturer,
-        safeModel,
-        safeBody,
-        safeFuelType,
-        safeTrans,
+        manufacturer_id ? Number(manufacturer_id) : null,
+        model_id ? Number(model_id) : null,
+        body_type_id ? Number(body_type_id) : null,
+        fuel_type_id ? Number(fuel_type_id) : null,
+        transmission_id ? Number(transmission_id) : null,
         year_of_manufacture,
         year_of_registration,
         province_city,
         color,
-        safeSeats,
+        number_of_seats ? Number(number_of_seats) : null,
         status || "pending",
       ]
     );
@@ -155,6 +151,7 @@ export const createListing = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 export const updateListing = async (req, res) => {
   try {
     const id = req.params.id;

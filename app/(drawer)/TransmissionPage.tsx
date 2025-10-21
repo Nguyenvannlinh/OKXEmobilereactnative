@@ -21,7 +21,7 @@ export default function TransmissionPage() {
     const API_URL =
     Platform.OS === 'web'
       ? 'http://localhost:5000/api/transmissions'
-      : 'http://192.168.1.12:5000/api/transmissions';
+      : 'http://172.20.10.7:5000/api/transmissions';
 
   const [transmissions, setTransmissions] = useState<Transmission[]>([]);
   const [loading, setLoading] = useState(true);

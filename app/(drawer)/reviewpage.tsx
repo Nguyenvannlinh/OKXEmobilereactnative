@@ -16,7 +16,7 @@ export default function ReviewPage() {
     const API_URL =
     Platform.OS === 'web'
       ? 'http://localhost:5000/api/reviews'
-      : 'http://192.168.1.12:5000/api/reviews';
+      : 'http://172.20.10.7:5000/api/reviews';
 
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

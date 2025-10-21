@@ -21,11 +21,9 @@ import {
 
 const screenWidth = Dimensions.get('window').width;
 
-// ⚙️ Xác định môi trường
 const isWeb = Platform.OS === 'web';
-const LOCAL_IP = '192.168.1.12'; // 👉 thay IP này bằng IP LAN máy bạn
+const LOCAL_IP = '172.20.10.7:8081';
 
-// ⚙️ URL API & Ảnh tách riêng
 const API_BASE = isWeb
   ? 'http://localhost:5000/api'
   : `http://${LOCAL_IP}:5000/api`;

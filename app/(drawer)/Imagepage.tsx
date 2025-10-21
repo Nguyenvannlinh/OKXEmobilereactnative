@@ -16,8 +16,13 @@ import {
 } from "react-native";
 
 export default function ImagePage() {
-  const API_URL = "http://localhost:5000/api/images";
-  const BASE_URL = "http://localhost:5000";
+  // ✅ BASE_URL hoạt động trên cả Web và Mobile
+  const BASE_URL =
+    Platform.OS === "web"
+      ? "http://localhost:5000"
+      : "http://172.20.10.7:5000"; // 🔥 đổi thành IP LAN của máy bạn
+
+  const API_URL = `${BASE_URL}/api/images`;
 
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,20 +43,15 @@ export default function ImagePage() {
 
   const [selectedImage, setSelectedImage] = useState<any>(null);
 
-  // ✅ Sửa hàm này — load ảnh từ /uploads
+  // ✅ Chuẩn hoá link ảnh để hiển thị đúng
   const getFullImageUrl = (path: string) => {
     if (!path) return "https://via.placeholder.com/400x300?text=No+Image";
-
-    // Nếu ảnh là URL đầy đủ
     if (path.startsWith("http")) return path;
-
-    // Nếu ảnh nằm trong /uploads → nối đúng BASE_URL
     if (path.startsWith("/uploads")) return `${BASE_URL}${path}`;
-
-    // Nếu DB chỉ lưu tên file → tự thêm /uploads/
     return `${BASE_URL}/uploads/${path}`;
   };
 
+  // ✅ Lấy danh sách ảnh
   const fetchImages = async () => {
     try {
       setLoading(true);
@@ -69,6 +69,7 @@ export default function ImagePage() {
     fetchImages();
   }, []);
 
+  // ✅ Mở modal thêm/sửa
   const openModal = (item?: any) => {
     if (item) {
       setEditingItem(item);
@@ -91,6 +92,7 @@ export default function ImagePage() {
     setModalVisible(true);
   };
 
+  // ✅ Chọn ảnh từ thư viện
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -113,7 +115,7 @@ export default function ImagePage() {
     }
   };
 
-  // ✅ Lưu ảnh (thêm / sửa)
+  // ✅ Lưu ảnh (thêm/sửa)
   const handleSave = async () => {
     try {
       const listingId = form.listing_id || (editingItem?.listing_id ?? "");
@@ -149,50 +151,32 @@ export default function ImagePage() {
       setModalVisible(false);
       fetchImages();
     } catch (error) {
-      console.error("Lỗi lưu ảnh:", error);
+      console.error("❌ Lỗi lưu ảnh:", error);
       Alert.alert("❌ Lỗi", "Lưu ảnh thất bại");
     }
   };
 
-  // ✅ Xóa ảnh (chỉ gọi API, không xóa file)
+  // ✅ Xoá ảnh
   const handleDeleteImage = async (image: any) => {
-    if (Platform.OS === "web") {
-      const confirmDelete = window.confirm(
-        `🗑 Bạn có chắc muốn xóa ảnh #${image.image_id} không?`
-      );
-      if (!confirmDelete) return;
-
+    const confirmDelete = async () => {
       try {
         await axios.delete(`${API_URL}/${image.image_id}`);
-        alert("✅ Ảnh đã được xóa thành công.");
+        Alert.alert("✅ Thành công", "Ảnh đã được xóa.");
         fetchImages();
       } catch (error) {
         console.error("❌ Lỗi khi xóa ảnh:", error);
-        alert("❌ Không thể xóa ảnh, vui lòng thử lại.");
+        Alert.alert("❌ Lỗi", "Không thể xóa ảnh, vui lòng thử lại.");
       }
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm(`🗑 Bạn có chắc muốn xóa ảnh #${image.image_id} không?`))
+        confirmDelete();
     } else {
-      // 📱 Mobile
-      Alert.alert(
-        "Xác nhận xóa",
-        `Bạn có chắc muốn xóa ảnh #${image.image_id} không?`,
-        [
-          { text: "Hủy", style: "cancel" },
-          {
-            text: "Xóa",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                await axios.delete(`${API_URL}/${image.image_id}`);
-                Alert.alert("✅ Thành công", "Ảnh đã được xóa.");
-                fetchImages();
-              } catch (error) {
-                console.error("❌ Lỗi khi xóa ảnh:", error);
-                Alert.alert("❌ Lỗi", "Không thể xóa ảnh, vui lòng thử lại.");
-              }
-            },
-          },
-        ]
-      );
+      Alert.alert("Xác nhận xóa", `Bạn có chắc muốn xóa ảnh #${image.image_id}?`, [
+        { text: "Hủy", style: "cancel" },
+        { text: "Xóa", style: "destructive", onPress: confirmDelete },
+      ]);
     }
   };
 

@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
@@ -16,7 +17,7 @@ import {
 const BASE_URL =
   Platform.OS === "web"
     ? "http://localhost:5000"
-    : "http://192.168.1.12:5000";
+    : "http://172.20.10.7:5000";
 
 const Post = () => {
   // --- State ---
@@ -107,9 +108,26 @@ const Post = () => {
     }
 
     try {
+      // ✅ Lấy user_id thật từ storage
+      let userId: string | null = null;
+      if (Platform.OS === "web") {
+        const userStr = localStorage.getItem("user");
+        const user = userStr ? JSON.parse(userStr) : null;
+        userId = user?.user_id?.toString() || null;
+      } else {
+        const userStr = await AsyncStorage.getItem("user");
+        const user = userStr ? JSON.parse(userStr) : null;
+        userId = user?.user_id?.toString() || null;
+      }
+
+      if (!userId) {
+        Alert.alert("Lỗi", "Không tìm thấy ID người bán. Vui lòng đăng nhập lại.");
+        return;
+      }
+
       // 1️⃣ Gửi dữ liệu bài đăng
       const listingData = {
-        user_id: 1,
+        user_id: Number(userId),
         title,
         description,
         price: Number(price),
@@ -200,6 +218,7 @@ const Post = () => {
     <ScrollView style={styles.container}>
       <Text style={styles.headerTitle}>Đăng tin bán xe</Text>
 
+      {/* --- Các input --- */}
       <TextInput style={styles.input} placeholder="Tiêu đề" value={title} onChangeText={setTitle} />
       <TextInput
         style={[styles.input, styles.textArea]}

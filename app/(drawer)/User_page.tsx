@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 
 export default function UserPage() {
-  const API_URL = 'http://localhost:5000/api/users';
-
+  const API_URL =
+    Platform.OS === 'web'
+      ? 'http://localhost:5000/api/users'
+      : 'http://172.20.10.7:5000/api/users';
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);

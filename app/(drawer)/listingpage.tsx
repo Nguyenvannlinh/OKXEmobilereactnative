@@ -1,4 +1,7 @@
+import { RootStackParamList } from "@/app/(Types)/navigation";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import {
@@ -12,11 +15,14 @@ import {
   View,
 } from "react-native";
 
+// ✅ Navigation type
+type NavProp = StackNavigationProp<RootStackParamList, "Post">;
+
 // ✅ BASE_URL phù hợp Web/Mobile
 const BASE_URL =
   Platform.OS === "web"
     ? "http://localhost:5000"
-    : "http://192.168.1.12:5000";
+    : "http://172.20.10.7:5000";
 
 type Listing = {
   listing_id: number;
@@ -41,11 +47,13 @@ type Listing = {
 export default function ListingPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [sortBy, setSortBy] = useState<"date" | "price" | "views">("date");
+  const navigation = useNavigation<NavProp>();
 
   useEffect(() => {
     fetchListings();
   }, [sortBy]);
 
+  // 🔹 Lấy danh sách bài đăng
   const fetchListings = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/listings`);
@@ -54,8 +62,7 @@ export default function ListingPage() {
       if (sortBy === "date") {
         data.sort(
           (a, b) =>
-            new Date(b.created_at).getTime() -
-            new Date(a.created_at).getTime()
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
       } else if (sortBy === "price") {
         data.sort((a, b) => Number(b.price) - Number(a.price));
@@ -69,7 +76,7 @@ export default function ListingPage() {
     }
   };
 
-  // ✅ Hàm xoá bài đăng
+  // 🔹 Xóa bài đăng
   const handleDelete = async (listingId: number) => {
     try {
       const confirmDelete =
@@ -100,7 +107,7 @@ export default function ListingPage() {
     }
   };
 
-  // ✅ Xử lý ảnh (đảm bảo load đúng link)
+  // ✅ Ảnh hiển thị đúng
   const getImageUrl = (url?: string) => {
     if (!url) return "https://via.placeholder.com/300x200?text=No+Image";
     if (url.startsWith("http")) return url;
@@ -111,10 +118,10 @@ export default function ListingPage() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Quản lý Bài đăng (Listing)</Text>
+        <Text style={styles.headerTitle}>Quản lý Bài đăng</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => Alert.alert("Đi tới thêm bài đăng")}
+          onPress={() => navigation.navigate("Post")}
         >
           <Ionicons name="add-circle-outline" size={20} color="#fff" />
           <Text style={styles.addButtonText}>Thêm bài đăng</Text>
@@ -188,7 +195,7 @@ export default function ListingPage() {
         ) : (
           listings.map((item) => (
             <View key={item.listing_id} style={styles.card}>
-              {/* Ảnh sản phẩm */}
+              {/* Ảnh */}
               <Image
                 source={{ uri: getImageUrl(item.main_image) }}
                 style={styles.image}
@@ -205,14 +212,20 @@ export default function ListingPage() {
                     styles.status,
                     item.status === "approved"
                       ? styles.approved
+                      : item.status === "sold"
+                      ? styles.sold
                       : styles.pending,
                   ]}
                 >
-                  {item.status}
+                  {item.status === "sold"
+                    ? "Đã bán"
+                    : item.status === "approved"
+                    ? "Duyệt"
+                    : "Chờ"}
                 </Text>
               </View>
 
-              {/* Thông tin chi tiết */}
+              {/* Thông tin */}
               <Text style={styles.cardText}>👤 {item.username || "Ẩn danh"}</Text>
               <Text style={styles.cardText}>
                 🏷 {item.manufacturer_name || "Hãng"}{" "}
@@ -245,11 +258,10 @@ export default function ListingPage() {
 
               {/* Nút hành động */}
               <View style={styles.actions}>
+                {/* 📝 Sửa */}
                 <TouchableOpacity
                   style={[styles.actionBtn, { backgroundColor: "#e3f2fd" }]}
-                  onPress={() =>
-                    Alert.alert("Sửa bài", `ID: ${item.listing_id}`)
-                  }
+                  onPress={() => navigation.navigate("Post", { listing: item })}
                 >
                   <Ionicons name="create-outline" size={18} color="#2196f3" />
                   <Text style={[styles.actionText, { color: "#2196f3" }]}>
@@ -257,6 +269,7 @@ export default function ListingPage() {
                   </Text>
                 </TouchableOpacity>
 
+                {/* 🗑 Xóa */}
                 <TouchableOpacity
                   style={[styles.actionBtn, { backgroundColor: "#fdecea" }]}
                   onPress={() => handleDelete(item.listing_id)}
@@ -305,10 +318,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
-  filterActive: {
-    backgroundColor: "#00C6CF",
-    borderColor: "#00C6CF",
-  },
+  filterActive: { backgroundColor: "#00C6CF", borderColor: "#00C6CF" },
   filterText: { marginLeft: 4, fontSize: 13, color: "#333" },
   filterTextActive: { color: "#fff", fontWeight: "600" },
   emptyText: { textAlign: "center", color: "#999", marginTop: 40 },
@@ -340,9 +350,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    textTransform: "capitalize",
   },
   approved: { backgroundColor: "#e8f5e9", color: "#2e7d32" },
   pending: { backgroundColor: "#fff8e1", color: "#f57c00" },
+  sold: { backgroundColor: "#ffebee", color: "#c62828" },
   cardText: { fontSize: 14, color: "#555", marginVertical: 1 },
   cardDate: { fontSize: 12, color: "#888", marginTop: 4 },
   actions: {

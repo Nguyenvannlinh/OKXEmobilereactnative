@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,13 +13,17 @@ import {
 } from 'react-native';
 
 export default function BodyTypePage() {
-  const API_URL = 'http://localhost:5000/api/body-types';
+  const API_URL =
+    Platform.OS === 'web'
+      ? 'http://localhost:5000/api/body-types'
+      : 'http://172.20.10.7:5000/api/body-types';
 
   const [bodyTypes, setBodyTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [form, setForm] = useState({ name: '', description: '' });
+
   const fetchBodyTypes = async () => {
     try {
       setLoading(true);
@@ -46,6 +51,7 @@ export default function BodyTypePage() {
     }
     setModalVisible(true);
   };
+
   const handleSave = async () => {
     const method = editingItem ? 'PUT' : 'POST';
     const url = editingItem ? `${API_URL}/${editingItem.body_type_id}` : API_URL;
@@ -66,7 +72,6 @@ export default function BodyTypePage() {
     }
   };
 
-  // 🔹 Xóa
   const handleDelete = (id: number) => {
     Alert.alert('Xác nhận', 'Bạn có chắc muốn xóa kiểu thân xe này?', [
       { text: 'Hủy', style: 'cancel' },
@@ -131,7 +136,6 @@ export default function BodyTypePage() {
         </ScrollView>
       )}
 
-      {/* Modal thêm/sửa */}
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>

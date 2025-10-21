@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,7 +13,10 @@ import {
 } from "react-native";
 
 export default function ManufacturersPage() {
-  const API_URL = "http://localhost:5000/api/manufacturers";
+   const API_URL =
+    Platform.OS === 'web'
+      ? 'http://localhost:5000/api/manufacturers'
+      : 'http://172.20.10.7:5000/api/manufacturers';
 
   const [manufacturers, setManufacturers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

@@ -41,11 +41,10 @@ type Order = {
   bodytype_name?: string;
 };
 
-// ✅ Thêm BASE_URL động để chạy được cả trên web và mobile
 const BASE_URL =
   Platform.OS === "web"
     ? "http://localhost:5000"
-    : "http://192.168.1.12:5000"; // ⚠️ Thay IP này bằng IP LAN của máy bạn
+    : "http://172.20.10.7:5000"; 
 
 export default function OrderManagementPage() {
   const [orders, setOrders] = useState<Order[]>([]);

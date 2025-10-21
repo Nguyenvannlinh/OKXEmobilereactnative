@@ -28,7 +28,7 @@ type ProductNavProp = StackNavigationProp<RootStackParamList, "ProductDetail">;
 const BASE_URL =
   Platform.OS === "web"
     ? "http://localhost:5000"
-    : "http://192.168.1.12:5000";
+    : "http://172.20.10.7:5000";
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<ProductNavProp>();
